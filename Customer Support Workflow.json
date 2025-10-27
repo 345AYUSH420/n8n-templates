@@ -1,0 +1,332 @@
+{
+  "name": "Customer Support Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            },
+            {}
+          ]
+        },
+        "filters": {}
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        312
+      ],
+      "id": "5811e015-f112-477c-b0c2-4d56038e7fa1",
+      "name": "Gmail Trigger",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "9dRgS2AFpcbJsct9",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "inputText": "={{ $json.Subject }}",
+        "categories": {
+          "categories": [
+            {
+              "category": "Security alert",
+              "description": "any email that is realted to security alert"
+            },
+            {
+              "category": "other",
+              "description": "any email that is not access providing"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.textClassifier",
+      "typeVersion": 1.1,
+      "position": [
+        224,
+        312
+      ],
+      "id": "6cedb640-fc6c-4d5f-a990-d99e4f4dce6a",
+      "name": "Text Classifier"
+    },
+    {
+      "parameters": {
+        "model": "anthropic/claude-3.5-sonnet",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        296,
+        536
+      ],
+      "id": "06f66ce3-f304-4bc6-a18f-9d3694774bda",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "lhN3cEiFu4dlLI0e",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        712,
+        512
+      ],
+      "id": "285cf5d0-7c55-4b7a-b958-364b92b0112d",
+      "name": "No Operation, do nothing"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.Subject }}",
+        "options": {
+          "systemMessage": "If the user asks any question related to the email stating\n“You allowed n8n.cloud access to some of your Google Account data…”\nor anything about n8n.cloud accessing Google data, permissions, or account security,\nexplain that this message is a Google security alert that appears when an app (in this case, n8n.cloud) is granted access to parts of the user’s Google Account. using my tool.\n\nonly reply the body of the message."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        608,
+        -96
+      ],
+      "id": "f6976fbe-a21e-4f3f-9485-f809a7756d72",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        576,
+        128
+      ],
+      "id": "6fb44cb6-40d6-4e8f-bd6e-dff1b229cffd",
+      "name": "OpenRouter Chat Model1",
+      "credentials": {
+        "openRouterApi": {
+          "id": "lhN3cEiFu4dlLI0e",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "reply",
+        "messageId": "={{ $('Gmail Trigger').item.json.id }}",
+        "message": "Thanks for the update",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1296,
+        112
+      ],
+      "id": "3ac86898-1fba-4c89-ac01-b2d352d42152",
+      "name": "Reply to a message",
+      "webhookId": "81c24a42-2242-4d82-8870-8892b12648fc",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "9dRgS2AFpcbJsct9",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "fetch the relevant information about the security alert",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "embeddings1",
+          "mode": "list",
+          "cachedResultName": "embeddings1"
+        },
+        "options": {
+          "pineconeNamespace": "customer Support"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1.3,
+      "position": [
+        704,
+        128
+      ],
+      "id": "ea38eb75-5146-4e67-baf8-298c19f6677c",
+      "name": "Pinecone Vector Store",
+      "credentials": {
+        "pineconeApi": {
+          "id": "8Dge56IzfQf52UUz",
+          "name": "PineconeApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "text-embedding-ada-002",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsAzureOpenAi",
+      "typeVersion": 1,
+      "position": [
+        784,
+        336
+      ],
+      "id": "f932b222-8614-4fc5-a15f-12333734e398",
+      "name": "Embeddings Azure OpenAI",
+      "credentials": {
+        "azureOpenAiApi": {
+          "id": "JZ0NpeqFvUk1jdVU",
+          "name": "Azure Open AI account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $('Gmail Trigger').item.json.id }}",
+        "labelIds": [
+          "IMPORTANT"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1072,
+        112
+      ],
+      "id": "f4901fa0-d9b4-4df3-b03f-0c8962f6ba13",
+      "name": "Add label to message",
+      "webhookId": "432bf0ed-706c-4762-9542-31dc1c66a715",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "9dRgS2AFpcbJsct9",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "Text Classifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Text Classifier",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Text Classifier": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Add label to message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pinecone Vector Store": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Azure OpenAI": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add label to message": {
+      "main": [
+        [
+          {
+            "node": "Reply to a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "7a059963-26bb-4900-9882-cefeb0c08855",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "fb91f2eaaa19733c8012dbbd15e92c615a50571410f09dcdf59f8606aa326c58"
+  },
+  "id": "GlWqjj6Y6zfNZTTZ",
+  "tags": []
+}
