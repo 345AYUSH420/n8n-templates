@@ -1,30 +1,34 @@
-```markdown
 # n8n-templates
 
 ## 📘 Overview / Description
-n8n-templates is a curated collection of pre-built workflow templates for [n8n](https://n8n.io/), an open-source workflow automation tool. These templates aim to help users quickly automate common tasks and integrate various services without building workflows from scratch.
+n8n-templates is a curated collection of workflow templates designed for the n8n automation platform. These templates help users quickly set up common automation tasks and integrate various services without starting from scratch.
 
 ## ⚙️ Features
-- Ready-to-use n8n workflow templates covering popular integrations
-- Easy import into n8n to jumpstart automation projects
-- Organized and well-documented workflows
-- Supports a wide range of apps and services
+- Ready-to-use automation workflow templates for n8n
+- Covers a wide variety of integrations and use cases
+- Templates designed to be easily imported and customized
 
 ## 🚀 Setup / Usage Instructions
-1. Clone or download the repository.
-2. Open your n8n instance.
-3. Import the desired workflow template from the JSON files found in this repository.
-4. Customize the workflow as needed for your specific use case.
-5. Activate and run your workflow.
+1. Clone or download this repository.
+2. Import your desired workflow template into your n8n instance:
+   - Open n8n editor UI
+   - Select **Import** from the main menu
+   - Choose the workflow JSON file from this repository
+3. Customize the imported workflow as needed to suit your automation requirements.
+4. Activate and run your workflow.
 
 ## 📂 File / Folder Structure
-- `/workflows` — Directory containing the JSON workflow template files.
-- `README.md` — Project documentation file.
+This repository primarily contains JSON workflow template files for n8n, organized by use case or integration type.
 
 ## 🧩 Recent Updates or Changes
-The previous `README.md` file was deleted in the latest commit. This README has now been recreated to provide clear project information and usage instructions.
+- Commit: **deleting github.txt**  
+  Removed the file `github.txt` to streamline repository contents and focus on workflow templates.
 
 ## 👨‍💻 Author / Credits
-Maintained by the n8n community and contributors.  
-For more information, visit the [n8n website](https://n8n.io/).
-```
+Created and maintained by the n8n community contributors.  
+For issues or contributions, please open a pull request or issue on the GitHub repository.
+
+---
+
+*Repository URL:* [n8n-templates](https://github.com/your-username/n8n-templates)  
+*(Replace with actual URL if known)*
