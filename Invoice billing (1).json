@@ -1,0 +1,406 @@
+{
+  "name": "Invoice billing",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "triggerOn": "specificFolder",
+        "folderToWatch": {
+          "__rl": true,
+          "value": "1YZFLCnblDgdTaIYmvQgVLX6clcIvuUzV",
+          "mode": "list",
+          "cachedResultName": "invoices",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1YZFLCnblDgdTaIYmvQgVLX6clcIvuUzV"
+        },
+        "event": "fileCreated",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -128
+      ],
+      "id": "80287f47-036a-4c56-a455-99f490ba315a",
+      "name": "Google Drive Trigger",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "1PySlgshV6Tsm3PJ",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        224,
+        -128
+      ],
+      "id": "9fb363ae-a326-4fdb-bfbc-2766b5935135",
+      "name": "Download file",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "1PySlgshV6Tsm3PJ",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        448,
+        -128
+      ],
+      "id": "51283d9f-8baa-48a3-8ff0-124763a66fec",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "text": "={{ $json.text }}",
+        "attributes": {
+          "attributes": [
+            {
+              "name": "Invoice No",
+              "description": "invoice number",
+              "required": true
+            },
+            {
+              "name": "Client name ",
+              "description": "Client name ",
+              "required": true
+            },
+            {
+              "name": "Email",
+              "description": "Email",
+              "required": true
+            },
+            {
+              "name": "Date of Issue",
+              "description": "Date of Issue",
+              "required": true
+            },
+            {
+              "name": "Due Date",
+              "description": "Due Date",
+              "required": true
+            },
+            {
+              "name": "Total",
+              "type": "number",
+              "description": "Total"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.informationExtractor",
+      "typeVersion": 1.2,
+      "position": [
+        672,
+        -128
+      ],
+      "id": "aafdfbbe-d516-4898-9c14-076d7d3d64a3",
+      "name": "Information Extractor"
+    },
+    {
+      "parameters": {
+        "model": "gpt-35-turbo",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAzureOpenAi",
+      "typeVersion": 1,
+      "position": [
+        744,
+        96
+      ],
+      "id": "d752f7d1-a3cc-4772-a5ec-a92d86995e0d",
+      "name": "Azure OpenAI Chat Model",
+      "credentials": {
+        "azureOpenAiApi": {
+          "id": "JZ0NpeqFvUk1jdVU",
+          "name": "Azure Open AI account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1-MSirfkbk-wTIu5_sjuoOEI896VW3j7d4xceOsagFGs",
+          "mode": "list",
+          "cachedResultName": "Invoice Details",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1-MSirfkbk-wTIu5_sjuoOEI896VW3j7d4xceOsagFGs/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1-MSirfkbk-wTIu5_sjuoOEI896VW3j7d4xceOsagFGs/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Invoice No": "={{ $json.output['Invoice No'] }}",
+            "Client name ": "={{ $json.output['Client name '] }}",
+            "Email": "={{ $json.output.Email }}",
+            "Date of Issue": "={{ $json.output['Date of Issue'] }}",
+            "Due Date": "={{ $json.output['Due Date'] }}",
+            "Total": "={{ $json.output.Total }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Invoice No",
+              "displayName": "Invoice No",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Client name ",
+              "displayName": "Client name ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Date of Issue",
+              "displayName": "Date of Issue",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Due Date",
+              "displayName": "Due Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Total",
+              "displayName": "Total",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1024,
+        -128
+      ],
+      "id": "e009aa05-eba3-4bf3-998e-7942ede819dc",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "pIkaSx3x5vLVtQyK",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=Invoice No : {{ $json['Invoice No'] }}\nclient name: {{ $json['Client name '] }}\nemail : {{ $json.Email }}\nDate of Isuue : {{ $json['Date of Issue'] }}\nDue date : {{ $json['Due Date'] }}\ntotal : {{ $json.Total }}\n\nAttach this link to dee the invoice : https://drive.google.com/drive/folders/1YZFLCnblDgdTaIYmvQgVLX6clcIvuUzV"
+            },
+            {
+              "content": "=You are an excellent email writer named Greenie from Green Gras Corp. Look at the above fields (invoice details, client name, amount, and due date) and generate a polite, professional email requesting payment for the above invoice as per the due date.\n\nAccess all relevant information from the user prompt.",
+              "role": "system"
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        1248,
+        -128
+      ],
+      "id": "a825b8f1-ec40-45a3-be0a-b4ea89bc1844",
+      "name": "Message a model",
+      "credentials": {
+        "openAiApi": {
+          "id": "T18DUPx3rs3w08X6",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.message.content.email.to }}",
+        "subject": "={{ $json.message.content.email.subject }}",
+        "emailType": "text",
+        "message": "={{ $json.message.content.email.body }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1600,
+        -128
+      ],
+      "id": "c26f6506-7cfb-49df-99c5-df10ae3a68f3",
+      "name": "Send a message",
+      "webhookId": "4b11a52f-4e8d-49cf-b7d9-bf299a19969f",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "9dRgS2AFpcbJsct9",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Drive Trigger": {
+      "main": [
+        [
+          {
+            "node": "Download file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Information Extractor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Azure OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Information Extractor",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Information Extractor": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "aeb80d1f-37e6-4c04-a463-38c5e28ce8c6",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "fb91f2eaaa19733c8012dbbd15e92c615a50571410f09dcdf59f8606aa326c58"
+  },
+  "id": "qd3R0tpFfl1K0rtJ",
+  "tags": []
+}
