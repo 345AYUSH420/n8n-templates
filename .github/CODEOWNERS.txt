@@ -1,5 +1,0 @@
-        # This is a comment
-        # Assign a default owner for the entire repository
-        * 345AYUSH420
-
-       
