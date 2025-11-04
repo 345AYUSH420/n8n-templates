@@ -1,0 +1,242 @@
+{
+  "name": "Ai voice agent",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "1bdd283a-ac0d-4d7d-8585-a1d1bde1a054",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -896,
+        -32
+      ],
+      "id": "c08f1a1c-69dd-42ae-96c5-1f57676c37cd",
+      "name": "Webhook",
+      "webhookId": "1bdd283a-ac0d-4d7d-8585-a1d1bde1a054"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.body.emailContent }}{{ $json.body.Start }}{{ $json.body.End }}{{ $json.body.Date }}{{ $json.body.title }}{{ $json.body.to }}",
+        "options": {
+          "systemMessage": "=# Overview\nYou are an AI agent responsible for drafting and sending professional emails **and setting up calendar events** based on user instructions.  \nYou have access to three tools: `contactData`, `sendEmail`, and `Event`.\n\nYour goal is to:\n1. Identify the recipient's correct email address using `contactData`.\n2. Use that email for both sending emails and creating events.\n3. Always sign off emails as \"Lucy\".\n\n---\n\n## Tools\n\n### contactData\nRetrieves the recipient's email address from Airtable based on their name.\n**Input**: Name (e.g., \"John Doe\")  \n**Output**: Email address (e.g., \"johndoe@example.com\")\n\n---\n\n### sendEmail\nSends a professional email to the recipient.  \nBefore using this tool, always use `contactData` to find the correct recipient email.\n\n**Input:**\n- `recipient`: Email address (from `contactData`)\n- `subject`: Email subject\n- `body`: Email body (sign off as “Lucy”)\n\n---\n\n### Event\nCreates a calendar event for the recipient.  \nBefore using this tool, always call `contactData` to get the recipient’s correct email address.  \nUse the retrieved email as the invitee.\n\n**Input:**\n- `recipient`: Email address (from `contactData`)\n- `description`: Event details\n\n---\n\n## Behavior\n- Always resolve the recipient email with `contactData` before any other tool.  \n- If the user asks to both send an email and create an event, handle them sequentially using the same verified email address.  \n- Never guess or fabricate email addresses.\n- Always end your messages with “– lucy”.\n- pick emailContent as the body and refine it using chat model.\n- dont ask for too much details just send the email.\n- add the title and description to event when setting up the even.\n- pick the title of the event from the email content only.for eg : set up an dinner event at 8pm to 10 pm . so the title is Dinner.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -560,
+        -32
+      ],
+      "id": "a27c4d99-ff41-45d3-b7ab-c3e666a0854a",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "google/gemini-2.5-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        -672,
+        192
+      ],
+      "id": "e25cfbc8-b021-4c50-b271-091417f43594",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "VoM1jRz8CzmpQf16",
+          "name": "OpenRouter account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('To', ``, 'string') }}",
+        "subject": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Subject', ``, 'string') }}",
+        "emailType": "text",
+        "message": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message', ``, 'string') }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.1,
+      "position": [
+        -544,
+        192
+      ],
+      "id": "9de56a42-7c15-4d6b-95a3-8b4d6fdf37b1",
+      "name": "Send a message in Gmail",
+      "webhookId": "54c1b2bf-e0db-4da4-9e6b-72fc958634c6",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "9dRgS2AFpcbJsct9",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        -80,
+        -32
+      ],
+      "id": "6ce7c472-e16e-4d40-8e18-7c50100f8230",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "appWqc49yIQRT161c",
+          "mode": "list",
+          "cachedResultName": "Contact Database",
+          "cachedResultUrl": "https://airtable.com/appWqc49yIQRT161c"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblbKlo1IXkUDQ2h8",
+          "mode": "list",
+          "cachedResultName": "Contacts",
+          "cachedResultUrl": "https://airtable.com/appWqc49yIQRT161c/tblbKlo1IXkUDQ2h8"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtableTool",
+      "typeVersion": 2.1,
+      "position": [
+        -416,
+        192
+      ],
+      "id": "dd235610-4143-41ec-95b7-be5c2249142d",
+      "name": "Search records in Airtable",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "dDOkvLDrirTmPl8i",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "ctesting206@gmail.com",
+          "mode": "list",
+          "cachedResultName": "ctesting206@gmail.com"
+        },
+        "start": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Start', ``, 'string') }}",
+        "end": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('End', ``, 'string') }}",
+        "useDefaultReminders": false,
+        "additionalFields": {
+          "summary": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Summary', ``, 'string') }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        -272,
+        192
+      ],
+      "id": "dce2fa1a-2d73-4bbe-a267-b9a307372335",
+      "name": "Event",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "KtQIxdkU0xMkiqI0",
+          "name": "Google Calendar account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message in Gmail": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search records in Airtable": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Event": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "55b7dc01-a3ad-4743-8d80-cfb1853ddc7f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "fb91f2eaaa19733c8012dbbd15e92c615a50571410f09dcdf59f8606aa326c58"
+  },
+  "id": "1uIFArKJMZLAT1Bj",
+  "tags": []
+}
