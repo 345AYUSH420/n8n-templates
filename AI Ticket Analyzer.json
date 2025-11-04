@@ -1,0 +1,764 @@
+{
+  "name": "AI Ticket Analyzer",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyHour",
+              "minute": 59
+            }
+          ]
+        },
+        "filters": {}
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        8
+      ],
+      "id": "810e90cc-8e65-4daa-a4fc-d4e4f512c99e",
+      "name": "Gmail Trigger",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "9dRgS2AFpcbJsct9",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Snippet:  {{ $json.snippet }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=🧠 Overview\n\nYou are an expert email writer and sentiment analyst.\nYour primary role is to read incoming emails, understand the sender’s intent and sentiment, then craft a polite, contextually appropriate reply.\n\n⚙️ Tools & Logging Instructions\n\nYou have access to a Google Sheet tool to log every processed email.\nFor each new email, record the following details:\n\nField\tDescription\nFrom\t{{ $json.From }}\nIntent\tThe purpose of the email (Complaint, Query, Feedback, or Other)\nSentiment\tOverall tone of the message (Positive, Neutral, or Negative)\nConfidence\tA score between 0 and 1 indicating confidence in your classification\nStatus\tIf intent is “Complaint” or confidence < 0.7 → mark as Escalated; otherwise mark as Replied\n🧩 Task Instructions\n\nAnalyze the following email:\n\n{{ $json.snippet }}\n\n\nPerform these steps:\n\nIntent Detection → Determine if the email is a Complaint, Query, Feedback, or Other.\n\nSentiment Analysis → Classify as Positive, Neutral, or Negative.\n\nConfidence Scoring → Rate your confidence in the analysis from 0.0–1.0.\n\nReply Drafting → Write a short, professional, and empathetic response to the email.\n\nBe polite, concise, and contextually relevant.\n\nMaintain a tone that reflects genuine care and helpfulness.\n\n🧾 Output Format\n\nAnalysis Summary:\n\nIntent: <detected intent>\n\nSentiment: <detected sentiment>\n\nConfidence: <confidence score>\n\nStatus: <Escalated/Replied>"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        224,
+        -96
+      ],
+      "id": "3fcb72ec-0f9f-47a5-a747-6e2720134e4e",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "google/gemini-2.5-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        232,
+        128
+      ],
+      "id": "b26894aa-3433-4c2d-a843-011d201981f0",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "VoM1jRz8CzmpQf16",
+          "name": "OpenRouter account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "5aed8c89-326b-4ce7-8352-f3533842eddf",
+              "leftValue": "={{ $json.output.intent }}",
+              "rightValue": "Negative",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            },
+            {
+              "id": "535c9eeb-a404-4f82-b9ec-ac3432ca61b8",
+              "leftValue": "={{ $json.output.confidence }}",
+              "rightValue": 0.7,
+              "operator": {
+                "type": "number",
+                "operation": "lt"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        576,
+        8
+      ],
+      "id": "b837be1a-6bbd-4f87-9cea-cd082d27ff1c",
+      "name": "If",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n\t\"intent\": \"California\",\n\t\"sentiment\": \"\",\n  \"confidence\":0.7,\n  \"reply\":\"\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        360,
+        128
+      ],
+      "id": "bc6f2f02-ad5e-4c63-8418-927323988ede",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "chatId": "8582140859",
+        "text": "=🚨 Escalation Alert 🚨\nFrom:{{ $('Gmail Trigger').item.json.From }}\nIntent:{{ $json.output.intent }}\nSentiment:{{ $json.output.sentiment }}\nConfidence:{{ $json.output.confidence }}\nOriginal Message: {{ $('Gmail Trigger').item.json.Subject }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        800,
+        -88
+      ],
+      "id": "096807db-ec0c-4575-9607-5d3fbf220afb",
+      "name": "Send a text message",
+      "webhookId": "7f9df13a-9ac9-4c44-b792-c88186a12189",
+      "credentials": {
+        "telegramApi": {
+          "id": "nXqEaLU8ruMqhY4J",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "reply",
+        "messageId": "={{ $('Gmail Trigger').item.json.id }}",
+        "emailType": "text",
+        "message": "={{ $json.output.reply }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        800,
+        104
+      ],
+      "id": "a2024513-f3a3-448d-98d9-fd7bff52cd7d",
+      "name": "Reply to a message",
+      "webhookId": "cf5aeb85-3571-4ae6-8bf1-f3e71ffd9799",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "9dRgS2AFpcbJsct9",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"response\": \"escalation\"\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1024,
+        -88
+      ],
+      "id": "a8f96b44-63cf-4d80-b3de-97477a353575",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"response\":\"replied\"\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1024,
+        104
+      ],
+      "id": "14639274-e6b5-465b-a9f7-d7c9658cb9be",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "documentId": {
+          "__rl": true,
+          "value": "1-VY5TsKEJmgavB05WZuW7fEJDvyCpXwGgyqQlL6j3Q4",
+          "mode": "list",
+          "cachedResultName": "review Emails",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1-VY5TsKEJmgavB05WZuW7fEJDvyCpXwGgyqQlL6j3Q4/edit?usp=drivesdk"
+        },
+        "title": "={{ $now.toFormat(\"dd-MM-yyyy\") }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        224,
+        336
+      ],
+      "id": "cc0c5f02-6456-4def-9ec4-8cdcc35472b2",
+      "name": "Create sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "pIkaSx3x5vLVtQyK",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1-VY5TsKEJmgavB05WZuW7fEJDvyCpXwGgyqQlL6j3Q4",
+          "mode": "list",
+          "cachedResultName": "review Emails",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1-VY5TsKEJmgavB05WZuW7fEJDvyCpXwGgyqQlL6j3Q4/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "={{ $now.toFormat(\"dd-MM-yyyy\") }}"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "From": "={{ $('Gmail Trigger').item.json.From }}",
+            "Intent": "={{ $('AI Agent').item.json.output.intent }}",
+            "Confidence": "={{ $('AI Agent').item.json.output.confidence }}",
+            "Sentiment": "={{ $('AI Agent').item.json.output.sentiment }}",
+            "response": "={{ $json.response }}"
+          },
+          "matchingColumns": [
+            "Intent"
+          ],
+          "schema": [
+            {
+              "id": "From",
+              "displayName": "From",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Intent",
+              "displayName": "Intent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Sentiment",
+              "displayName": "Sentiment",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Confidence",
+              "displayName": "Confidence",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "response",
+              "displayName": "response",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1248,
+        8
+      ],
+      "id": "10ac9bce-57e8-4619-92db-ef11d710d6b9",
+      "name": "Append or update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "pIkaSx3x5vLVtQyK",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 24
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        336
+      ],
+      "id": "9ecc7617-a6af-4875-96a2-9d5bc82a3b35",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1-VY5TsKEJmgavB05WZuW7fEJDvyCpXwGgyqQlL6j3Q4",
+          "mode": "list",
+          "cachedResultName": "review Emails",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1-VY5TsKEJmgavB05WZuW7fEJDvyCpXwGgyqQlL6j3Q4/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "={{ $now.toFormat(\"dd-MM-yyyy\") }}",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "headerRow"
+          ],
+          "schema": [
+            {
+              "id": "headerRow",
+              "displayName": "headerRow",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        672,
+        336
+      ],
+      "id": "70e84c54-315a-491a-92e7-79df0a4601f0",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "pIkaSx3x5vLVtQyK",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"From\":\"\",\n  \"Intent\":\"\",\n  \"Sentiment\":\"\",\n  \"Confidence\":\"\",\n  \"response\":\"\"\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        448,
+        336
+      ],
+      "id": "a927093f-4424-47c8-bc47-165c24d3a19c",
+      "name": "Edit Fields2"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 23,
+              "triggerAtMinute": 59
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        664
+      ],
+      "id": "9ceba1e1-0c16-4150-a593-7145c87026c2",
+      "name": "Schedule Trigger1"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "analyse this data that you get and give me the report.",
+        "options": {
+          "systemMessage": "=You are a support team analytics bot.\nGiven the last 24 hours of customer support logs\ncreate a concise summary with:\n- Total messages processed\n- % Auto-Replied vs Escalated\n- Top 3 Intents\n- Average Sentiment\n- Any notable negative tickets\n- Suggested improvements\n\n##Behaviour\noutput the data in the proper readable format.\n\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        224,
+        656
+      ],
+      "id": "e2db72f9-3ca2-4c6c-b6e3-85023941f680",
+      "name": "AI Agent1"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1-VY5TsKEJmgavB05WZuW7fEJDvyCpXwGgyqQlL6j3Q4",
+          "mode": "list",
+          "cachedResultName": "review Emails",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1-VY5TsKEJmgavB05WZuW7fEJDvyCpXwGgyqQlL6j3Q4/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "={{ $now.toFormat(\"dd-MM-yyyy\") }}",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        360,
+        888
+      ],
+      "id": "20638a4d-c366-4d13-b437-cfd81dddae4c",
+      "name": "Get row(s) in sheet in Google Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "pIkaSx3x5vLVtQyK",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        176,
+        896
+      ],
+      "id": "567e7868-bffa-4168-925a-80a286847325",
+      "name": "OpenRouter Chat Model1",
+      "credentials": {
+        "openRouterApi": {
+          "id": "VoM1jRz8CzmpQf16",
+          "name": "OpenRouter account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "ctesting206@gmail.com",
+        "subject": "={{ $now.toFormat(\"dd-MM-yyyy\") }} analysis report",
+        "emailType": "text",
+        "message": "={{ $json.output }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        528,
+        656
+      ],
+      "id": "5fe429c2-48f7-4e8c-a462-781543410a90",
+      "name": "Send a message",
+      "webhookId": "4072f7cf-1b92-4514-ac12-be2efb39b86d",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "9dRgS2AFpcbJsct9",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "Gmail Trigger": [
+      {
+        "json": {
+          "id": "19a4d18db6baaea0",
+          "threadId": "19a4d18db6baaea0",
+          "snippet": "CAT 2025 Daily Targets Hi Code Testing, Take today&#39;s free CAT 2025 daily target tests with video solutions: Remind Me Later ⚔️VARC: Humans helped snails colonize Ireland -These snails may have",
+          "payload": {
+            "mimeType": "text/html"
+          },
+          "sizeEstimate": 280501,
+          "historyId": "12031",
+          "internalDate": "1762230063000",
+          "labels": [
+            {
+              "id": "INBOX",
+              "name": "INBOX"
+            },
+            {
+              "id": "CATEGORY_UPDATES",
+              "name": "CATEGORY_UPDATES"
+            },
+            {
+              "id": "UNREAD",
+              "name": "UNREAD"
+            }
+          ],
+          "To": "Code Testing <ctesting206@gmail.com>",
+          "From": "Cracku <maruti@cracku.in>",
+          "Subject": "CAT 2025 RC 🐚 These Snails Colonized Ireland by Hitchhiking on Human Boats"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Reply to a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reply to a message": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a text message": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Append or update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Append or update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create sheet": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Create sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields2": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger1": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet in Google Sheets": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent1": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1663d2b3-f2dc-4ef7-a491-bf2e70763a42",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "fb91f2eaaa19733c8012dbbd15e92c615a50571410f09dcdf59f8606aa326c58"
+  },
+  "id": "NOmCoYS9Vb7zRsOB",
+  "tags": []
+}
